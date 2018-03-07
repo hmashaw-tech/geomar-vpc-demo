@@ -15,4 +15,6 @@ variable "project" { default = "AWS-demo-mark" }
 
 variable "subnet-public-a" { default = "subnet-68d82923" }
 
+variable "ssh_user" { default = "ubuntu" }
+
 variable "vpc_id" {}

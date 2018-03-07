@@ -1,0 +1,1 @@
+ansible-playbook -i ansible-inventory --private-key ~/.ssh/geomar-demo.key ansible-playbook.yml

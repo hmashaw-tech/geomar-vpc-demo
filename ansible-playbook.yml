@@ -1,0 +1,133 @@
+---
+- name: Configure CI Server
+  hosts: servers
+  gather_facts: false
+  become: yes
+
+  tasks:
+    # Installing tree just because - directory views
+    - name: Install the package 'tree'
+      apt:
+        name: tree
+        state: present
+
+    # let's encrypt
+    - name: create /var/www/letsencrypt directory
+      file:
+        path: /var/www/letsencrypt/.well-known/acme-challenge
+        state: directory
+  
+    # web site - test.com
+    - name: create test.com directory
+      file:
+        path: /var/www/test.com/html
+        owner: ubuntu
+        group: ubuntu
+        state: directory
+      tags:
+        - website
+
+    # web site - howiexpired.com
+    - name: create howiexpired.com directory
+      file:
+        path: /var/www/howiexpired.com/html
+        owner: ubuntu
+        group: ubuntu
+        state: directory
+      tags:
+        - website
+
+    # web site - jenkins.shawmer.com
+    - name: create jenkins.shawmer.com directory
+      file:
+        path: /var/www/jenkins.shawmer.com/html
+        owner: ubuntu
+        group: ubuntu
+        state: directory
+      tags:
+        - website
+
+    # web sites index.html files
+    - name: copy sites index.html file
+      template:
+        src: templates/index.html.j2
+        dest: /var/www/{{ item.name }}/html/index.html
+        owner: ubuntu
+        group: ubuntu
+        mode: 0644
+      with_items:
+        - { name: test.com, msg: "Message for test.com site" }
+        - { name: howiexpired.com, msg: "Message for howiexpired.com site" }
+        - { name: jenkins.shawmer.com, msg: "Message for jenkins.shawmer.com site" }
+      tags:
+        - website
+
+    - name: copy nginx snippets
+      template:
+        src: templates/{{ item }}
+        dest: /etc/nginx/snippets/{{ item }}
+      with_items:
+        - letsencrypt.conf
+      tags:
+        - nginx
+
+    - name: copy nginx server block files
+      template:
+        src: templates/{{ item }}
+        dest: /etc/nginx/sites-available/{{ item }}
+      with_items:
+        - test.com
+        - howiexpired.com
+        - jenkins.shawmer.com
+      tags:
+        - nginx
+
+    - name: Enable nginx server blocks
+      file:
+        src: /etc/nginx/sites-available/{{ item }}
+        dest: /etc/nginx/sites-enabled/{{ item }}
+        state: link
+      with_items:
+        - test.com
+        - howiexpired.com
+        - jenkins.shawmer.com
+      tags:
+        - nginx
+
+    - name: copy nginx.conf
+      copy:
+        src: templates/nginx.conf
+        dest: /etc/nginx/nginx.conf
+        backup: yes
+      tags:
+        - nginx
+
+    - name: restart nginx service
+      service:
+        name: nginx
+        state: restarted
+      tags:
+        - nginx
+
+    - name: copy jenkins.default
+      copy:
+        src: templates/jenkins.default
+        dest: /etc/default/jenkins
+        backup: yes
+      tags:
+        - jenkins
+
+    - name: restart jenkins service
+      service:
+        name: jenkins
+        state: restarted
+      tags:
+        - jenkins
+
+    # Add ports here as needed
+    - name: UFW Ports
+      ufw:
+        rule: allow
+        port: '{{ item }}'
+      with_items:
+        - 8000

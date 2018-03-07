@@ -21,10 +21,10 @@ resource "aws_instance" "DemoServer" {
     key_name = "${var.key_name}"
 
     tags {
-        Name        = "DemoServer"
+        Name = "DemoServer"
         Owner = "${var.owner}"
-        Project     = "${var.project}"
-        Terraform   = "true"
+        Project = "${var.project}"
+        Terraform = "true"
         Description = "Linux Host - Demo"
     }
 }
